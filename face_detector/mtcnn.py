@@ -1,161 +1,9 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
-#MIT License
-#
-#Copyright (c) 2018 Iván de Paz Centeno
-#
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
-#
-#The above copyright notice and this permission notice shall be included in all
-#copies or substantial portions of the Software.
-#
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-#SOFTWARE.
-
-# IMPORTANT:
-#
-# This code is derivated from the MTCNN implementation of David Sandberg for Facenet
-# (https://github.com/davidsandberg/facenet/)
-# It has been rebuilt from scratch, taking the David Sandberg's implementation as a reference.
-# The code improves the readibility, fixes several mistakes in the definition of the network (layer names)
-# and provides the keypoints of faces as outputs along with the bounding boxes.
-#
-
 import cv2
 import numpy as np
 import pkg_resources
 import tensorflow as tf
-from mtcnn.layer_factory import LayerFactory
-from mtcnn.network import Network
-from mtcnn.exceptions import InvalidImage
-
-__author__ = "Iván de Paz Centeno"
-
-
-class PNet(Network):
-    """
-    Network to propose areas with faces.
-    """
-    def _config(self):
-        layer_factory = LayerFactory(self)
-
-        layer_factory.new_feed(name='data', layer_shape=(None, None, None, 3))
-        layer_factory.new_conv(name='conv1', kernel_size=(3, 3), channels_output=10, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu1')
-        layer_factory.new_max_pool(name='pool1', kernel_size=(2, 2), stride_size=(2, 2))
-        layer_factory.new_conv(name='conv2', kernel_size=(3, 3), channels_output=16, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu2')
-        layer_factory.new_conv(name='conv3', kernel_size=(3, 3), channels_output=32, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu3')
-        layer_factory.new_conv(name='conv4-1', kernel_size=(1, 1), channels_output=2, stride_size=(1, 1), relu=False)
-        layer_factory.new_softmax(name='prob1', axis=3)
-
-        layer_factory.new_conv(name='conv4-2', kernel_size=(1, 1), channels_output=4, stride_size=(1, 1),
-                               input_layer_name='prelu3', relu=False)
-
-    def _feed(self, image):
-        return self._session.run(['pnet/conv4-2/BiasAdd:0', 'pnet/prob1:0'], feed_dict={'pnet/input:0': image})
-
-
-class RNet(Network):
-    """
-    Network to refine the areas proposed by PNet
-    """
-
-    def _config(self):
-
-        layer_factory = LayerFactory(self)
-
-        layer_factory.new_feed(name='data', layer_shape=(None, 24, 24, 3))
-        layer_factory.new_conv(name='conv1', kernel_size=(3, 3), channels_output=28, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu1')
-        layer_factory.new_max_pool(name='pool1', kernel_size=(3, 3), stride_size=(2, 2))
-        layer_factory.new_conv(name='conv2', kernel_size=(3, 3), channels_output=48, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu2')
-        layer_factory.new_max_pool(name='pool2', kernel_size=(3, 3), stride_size=(2, 2), padding='VALID')
-        layer_factory.new_conv(name='conv3', kernel_size=(2, 2), channels_output=64, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu3')
-        layer_factory.new_fully_connected(name='fc1', output_count=128, relu=False)  # shouldn't the name be "fc1"?
-        layer_factory.new_prelu(name='prelu4')
-        layer_factory.new_fully_connected(name='fc2-1', output_count=2, relu=False)   # shouldn't the name be "fc2-1"?
-        layer_factory.new_softmax(name='prob1', axis=1)
-
-        layer_factory.new_fully_connected(name='fc2-2', output_count=4, relu=False, input_layer_name='prelu4')
-
-    def _feed(self, image):
-        return self._session.run(['rnet/fc2-2/fc2-2:0', 'rnet/prob1:0'], feed_dict={'rnet/input:0': image})
-
-
-class ONet(Network):
-    """
-    Network to retrieve the keypoints
-    """
-    def _config(self):
-        layer_factory = LayerFactory(self)
-
-        layer_factory.new_feed(name='data', layer_shape=(None, 48, 48, 3))
-        layer_factory.new_conv(name='conv1', kernel_size=(3, 3), channels_output=32, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu1')
-        layer_factory.new_max_pool(name='pool1', kernel_size=(3, 3), stride_size=(2, 2))
-        layer_factory.new_conv(name='conv2', kernel_size=(3, 3), channels_output=64, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu2')
-        layer_factory.new_max_pool(name='pool2', kernel_size=(3, 3), stride_size=(2, 2), padding='VALID')
-        layer_factory.new_conv(name='conv3', kernel_size=(3, 3), channels_output=64, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu3')
-        layer_factory.new_max_pool(name='pool3', kernel_size=(2, 2), stride_size=(2, 2))
-        layer_factory.new_conv(name='conv4', kernel_size=(2, 2), channels_output=128, stride_size=(1, 1),
-                               padding='VALID', relu=False)
-        layer_factory.new_prelu(name='prelu4')
-        layer_factory.new_fully_connected(name='fc1', output_count=256, relu=False)
-        layer_factory.new_prelu(name='prelu5')
-        layer_factory.new_fully_connected(name='fc2-1', output_count=2, relu=False)
-        layer_factory.new_softmax(name='prob1', axis=1)
-
-        layer_factory.new_fully_connected(name='fc2-2', output_count=4, relu=False, input_layer_name='prelu5')
-
-        layer_factory.new_fully_connected(name='fc2-3', output_count=10, relu=False, input_layer_name='prelu5')
-
-    def _feed(self, image):
-        return self._session.run(['onet/fc2-2/fc2-2:0', 'onet/fc2-3/fc2-3:0', 'onet/prob1:0'],
-                                 feed_dict={'onet/input:0': image})
-
-
-class StageStatus(object):
-    """
-    Keeps status between MTCNN stages
-    """
-    def __init__(self, pad_result: tuple=None, width=0, height=0):
-        self.width = width
-        self.height = height
-        self.dy = self.edy = self.dx = self.edx = self.y = self.ey = self.x = self.ex = self.tmpw = self.tmph = []
-
-        if pad_result is not None:
-            self.update(pad_result)
-
-    def update(self, pad_result: tuple):
-        s = self
-        s.dy, s.edy, s.dx, s.edx, s.y, s.ey, s.x, s.ex, s.tmpw, s.tmph = pad_result
-
+from architecture.architecture import Architecture
+from utils.stagestatus import StageStatus
 
 class MTCNN(object):
     """
@@ -164,13 +12,11 @@ class MTCNN(object):
         b) Detection of keypoints (left eye, right eye, nose, mouth_left, mouth_right)
     """
 
-    def __init__(self, weights_file: str=None, min_face_size: int=20, steps_threshold: list=None,
-                 scale_factor: float=0.709):
+    def __init__(self, weights_file: str=None, steps_threshold: list=None):
         """
         Initializes the MTCNN.
         :param weights_file: file uri with the weights of the P, R and O networks from MTCNN. By default it will load
         the ones bundled with the package.
-        :param min_face_size: minimum size of the face to detect
         :param steps_threshold: step's thresholds values
         :param scale_factor: scale factor
         """
@@ -180,51 +26,13 @@ class MTCNN(object):
         if weights_file is None:
             weights_file = pkg_resources.resource_stream('mtcnn', 'data/mtcnn_weights.npy')
 
-        self.__min_face_size = min_face_size
         self.__steps_threshold = steps_threshold
-        self.__scale_factor = scale_factor
+        
 
-        config = tf.compat.v1.ConfigProto(log_device_placement=False)
-        config.gpu_options.allow_growth = True
-
-        self.__graph = tf.Graph()
-
-        with self.__graph.as_default():
-            self.__session = tf.compat.v1.Session(config=config, graph=self.__graph)
-
-            weights = np.load(weights_file, allow_pickle=True).item()
-            self.__pnet = PNet(self.__session, False)
-            self.__pnet.set_weights(weights['PNet'])
-
-            self.__rnet = RNet(self.__session, False)
-            self.__rnet.set_weights(weights['RNet'])
-
-            self.__onet = ONet(self.__session, False)
-            self.__onet.set_weights(weights['ONet'])
+        self.model = Architecture()
+        self.__pnet, self.__rnet, self.__onet = self.model.build(weights_file)
 
         weights_file.close()
-
-    @property
-    def min_face_size(self):
-        return self.__min_face_size
-    
-    @min_face_size.setter
-    def min_face_size(self, mfc=20):
-        try:
-            self.__min_face_size = int(mfc)
-        except ValueError:
-            self.__min_face_size = 20
-    
-    def __compute_scale_pyramid(self, m, min_layer):
-        scales = []
-        factor_count = 0
-
-        while min_layer >= 12:
-            scales += [m * np.power(self.__scale_factor, factor_count)]
-            min_layer = min_layer * self.__scale_factor
-            factor_count += 1
-
-        return scales
 
     @staticmethod
     def __scale_image(image, scale: float):
@@ -393,53 +201,8 @@ class MTCNN(object):
         boundingbox[:, 0:4] = np.transpose(np.vstack([b1, b2, b3, b4]))
         return boundingbox
 
-    def detect_faces(self, img) -> list:
-        """
-        Detects bounding boxes from the specified image.
-        :param img: image to process
-        :return: list containing all the bounding boxes detected with their keypoints.
-        """
-        if img is None or not hasattr(img, "shape"):
-            raise InvalidImage("Image not valid.")
 
-        height, width, _ = img.shape
-        stage_status = StageStatus(width=width, height=height)
-
-        m = 12 / self.__min_face_size
-        min_layer = np.amin([height, width]) * m
-
-        scales = self.__compute_scale_pyramid(m, min_layer)
-
-        stages = [self.__stage1, self.__stage2, self.__stage3]
-        result = [scales, stage_status]
-
-        # We pipe here each of the stages
-        for stage in stages:
-            result = stage(img, result[0], result[1])
-
-        [total_boxes, points] = result
-
-        bounding_boxes = []
-
-        for bounding_box, keypoints in zip(total_boxes, points.T):
-
-            bounding_boxes.append({
-                    'box': [int(bounding_box[0]), int(bounding_box[1]),
-                            int(bounding_box[2]-bounding_box[0]), int(bounding_box[3]-bounding_box[1])],
-                    'confidence': bounding_box[-1],
-                    'keypoints': {
-                        'left_eye': (int(keypoints[0]), int(keypoints[5])),
-                        'right_eye': (int(keypoints[1]), int(keypoints[6])),
-                        'nose': (int(keypoints[2]), int(keypoints[7])),
-                        'mouth_left': (int(keypoints[3]), int(keypoints[8])),
-                        'mouth_right': (int(keypoints[4]), int(keypoints[9])),
-                    }
-                }
-            )
-
-        return bounding_boxes
-
-    def __stage1(self, image, scales: list, stage_status: StageStatus):
+    def stage1(self, image, scales: list, stage_status: StageStatus):
         """
         First stage of the MTCNN.
         :param image:
@@ -493,7 +256,7 @@ class MTCNN(object):
 
         return total_boxes, status
 
-    def __stage2(self, img, total_boxes, stage_status:StageStatus):
+    def stage2(self, img, total_boxes, stage_status:StageStatus):
         """
         Second stage of the MTCNN.
         :param img:
@@ -546,7 +309,7 @@ class MTCNN(object):
 
         return total_boxes, stage_status
 
-    def __stage3(self, img, total_boxes, stage_status: StageStatus):
+    def stage3(self, img, total_boxes, stage_status: StageStatus):
         """
         Third stage of the MTCNN.
 
@@ -613,4 +376,4 @@ class MTCNN(object):
         return total_boxes, points
 
     def __del__(self):
-        self.__session.close()
+        self.model.closeSession()

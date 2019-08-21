@@ -1,32 +1,5 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
-#MIT License
-#
-#Copyright (c) 2018 Iván de Paz Centeno
-#
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
-#
-#The above copyright notice and this permission notice shall be included in all
-#copies or substantial portions of the Software.
-#
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-#SOFTWARE.
-
 import tensorflow as tf
 from distutils.version import LooseVersion
-
-__author__ = "Iván de Paz Centeno"
 
 
 class LayerFactory(object):
@@ -119,7 +92,7 @@ class LayerFactory(object):
 
         # Convolution for a given input and kernel
         convolve = lambda input_val, kernel: tf.nn.conv2d(input=input_val,
-                filters=kernel, 
+                filter=kernel, 
                 strides=[1, stride_size[1], stride_size[0], 1],
                 padding=padding)
 
@@ -171,7 +144,7 @@ class LayerFactory(object):
 
         input_layer = self.__network.get_layer(input_layer_name)
 
-        output = tf.nn.max_pool2d(input=input_layer,
+        output = tf.nn.max_pool(value=input_layer,
                                 ksize=[1, kernel_size[1], kernel_size[0], 1],
                                 strides=[1, stride_size[1], stride_size[0], 1],
                                 padding=padding,

@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import cv2
-from mtcnn.mtcnn import MTCNN
+from facedetection import faceDetection
 
 
-detector = MTCNN()
+detector = faceDetection()
 
-image = cv2.imread("E:/humAIn/humAIn_faceless/humAIn_FaceLess/images/supermarket-56.png")
+image = cv2.imread("E:/humAIn/humAIn_faceless/humAIn_FaceLess/images_TCS/supermarket-56.png")
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 result = detector.detect_faces(image)
 print(result)
@@ -22,11 +22,11 @@ for detection in result:
               (0,155,255),
               2)
 
-    cv2.circle(image,(keypoints['left_eye']), 2, (0,155,255), 2)
-    cv2.circle(image,(keypoints['right_eye']), 2, (0,155,255), 2)
-    cv2.circle(image,(keypoints['nose']), 2, (0,155,255), 2)
-    cv2.circle(image,(keypoints['mouth_left']), 2, (0,155,255), 2)
-    cv2.circle(image,(keypoints['mouth_right']), 2, (0,155,255), 2)
+    # cv2.circle(image,(keypoints['left_eye']), 2, (0,155,255), 2)
+    # cv2.circle(image,(keypoints['right_eye']), 2, (0,155,255), 2)
+    # cv2.circle(image,(keypoints['nose']), 2, (0,155,255), 2)
+    # cv2.circle(image,(keypoints['mouth_left']), 2, (0,155,255), 2)
+    # cv2.circle(image,(keypoints['mouth_right']), 2, (0,155,255), 2)
 
 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 cv2.imshow("frame", image)

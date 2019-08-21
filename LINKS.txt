@@ -1,0 +1,37 @@
+**********************************************
+DATASETS:
+
+1) https://susanqq.github.io/UTKFace/ : Age, Gender and Enthnicity
+
+2) https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data : Emotion
+
+3) https://dataturks.com/projects/Mohan/Face%20Dataset%20With%20Emotion_Age_Ethnicity : Provided by TCS
+
+
+**********************************************
+
+MODEL/FRAMEWORK/CODE
+
+1) https://github.com/ipazc/mtcnn : Face Detection (USING)
+
+2) https://github.com/ageitgey/face_recognition : Face Detection (Didn't work)
+
+3) https://github.com/yu4u/age-gender-estimation : Age-Gender Detection
+
+4) https://github.com/abars/YoloKerasFaceDetection : Yolo Face Detection using Keras
+
+5) https://github.com/etosworld/etos-mtcnn : Train MTCNN
+
+**********************************************
+
+PAPERS/READING MATERIAL
+
+1) https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf : Multi Task CNN
+
+2) https://towardsdatascience.com/how-does-a-face-detection-program-work-using-neural-networks-17896df8e6ff : MTCNN
+
+3) https://www.pyimagesearch.com/2018/06/04/keras-multiple-outputs-and-multiple-losses/ : Pyimagesearch multi-output classification
+
+4) https://www.census.gov/prod/cen2010/briefs/c2010br-03.pdf : Population age group 
+
+**********************************************
