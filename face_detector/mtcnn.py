@@ -24,7 +24,7 @@ class MTCNN(object):
             steps_threshold = [0.6, 0.7, 0.7]
 
         if weights_file is None:
-            weights_file = pkg_resources.resource_stream('mtcnn', 'data/mtcnn_weights.npy')
+            weights_file = pkg_resources.resource_stream('mtcnn', 'weights/mtcnn_weights.npy')
 
         self.__steps_threshold = steps_threshold
         

@@ -3,6 +3,7 @@
 
 import cv2
 from facedetection import faceDetection
+from genderagerace import GenderRaceAge
 
 
 detector = faceDetection()
@@ -12,22 +13,19 @@ image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 result = detector.detect_faces(image)
 print(result)
 
-# Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
-for detection in result:
-    bounding_box = detection['box']
-
-    cv2.rectangle(image,
-              (bounding_box[0], bounding_box[1]),
-              (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
-              (0,155,255), 2)
+# image_bbox = detector.drawBoundingBox(image, result)
 
 
-cropped = image[bounding_box[1]: bounding_box[1] + bounding_box[3], bounding_box[0]:bounding_box[0]+bounding_box[2]]
+gra_detector = GenderRaceAge()
+cropped_faces = detector.getCropedImages(image, result)
+output = gra_detector.predict(cropped_faces)
 
-image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-cropped = cv2.cvtColor(cropped, cv2.xCOLOR_RGB2BGR)
+print(output)
 
-cv2.imshow("frame", image)
-cv2.imshow("croppedframe", cropped)
-cv2.waitKey()
 
+# for face_id , face in cropped_faces.items():
+#   cv2.imshow(face_id, face)
+
+# cv2.imshow("frame", image_bbox)
+
+# cv2.waitKey()

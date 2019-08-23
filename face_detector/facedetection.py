@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 from mtcnn import MTCNN
 from utils.stagestatus import StageStatus
@@ -36,7 +37,6 @@ class faceDetection():
             factor_count += 1
 
         return scales
-
 
 
     def detect_faces(self, img) -> list:
@@ -84,3 +84,33 @@ class faceDetection():
             )
 
         return bounding_boxes
+
+
+    def drawBoundingBox(self, image, result):
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        for detection in result:
+            bounding_box = detection['box']
+
+            cv2.rectangle(image,
+                      (bounding_box[0], bounding_box[1]),
+                      (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
+                      (0,155,255), 2)
+
+        return image
+
+    def getCropedImages(self, image, result):
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        faces_id = {}
+
+        face_count = 0
+        for detection in result:
+            bounding_box = detection['box']
+            cropped = image[bounding_box[1]: bounding_box[1] + bounding_box[3], bounding_box[0]:bounding_box[0]+bounding_box[2]]
+
+            faces_id['face_{}'.format(face_count)] = cropped
+            face_count+=1
+
+        return faces_id
+        
