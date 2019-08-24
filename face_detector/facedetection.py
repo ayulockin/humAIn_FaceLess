@@ -87,8 +87,6 @@ class faceDetection():
 
 
     def drawBoundingBox(self, image, result):
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
         for detection in result:
             bounding_box = detection['box']
 
@@ -100,8 +98,6 @@ class faceDetection():
         return image
 
     def getCropedImages(self, image, result):
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
         faces_id = {}
 
         face_count = 0
@@ -113,4 +109,3 @@ class faceDetection():
             face_count+=1
 
         return faces_id
-        

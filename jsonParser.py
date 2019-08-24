@@ -32,6 +32,6 @@ def parseData(data_dict):
 dataPath = 'datasets/Face_Recognition.json'
 data_dict = loadData(dataPath)
 image_urls, image_names = parseData(data_dict)
-downloadImage(image_urls, image_names)
+# downloadImage(image_urls, image_names)
 
 
