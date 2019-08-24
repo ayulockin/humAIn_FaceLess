@@ -3,3 +3,4 @@
 *.pyc
 
 face_detector/weights
+images

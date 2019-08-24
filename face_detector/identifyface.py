@@ -98,6 +98,9 @@ class IdentifyFace():
 		print("[INFO] Done")
 		return output
 
+	def __degroupGender(self, gender):
+		if age==0
+
 	def __degroupAge(self, age):
 		# Age_below20
 		if age==0 or age==1:
