@@ -15,7 +15,7 @@ from keras.models import load_model
 
 
 class IdentifyFace():
-	def __init__(self, weight_path=['weights/gender-race-age.hdf5', 'weights/emotion.hdf5']):
+	def __init__(self, weight_path=['face_detector/weights/gender-race-age.hdf5', 'face_detector/weights/emotion.hdf5']):
 
 		self._gra_weight_path = weight_path[0]
 		self._e_weight_path = weight_path[1]
@@ -32,9 +32,6 @@ class IdentifyFace():
 		self.gra_buildModel()
 		self.e_buildModel()
 		print("[INFO] Done")
-
-		print("[CHECKING]", self.__gra_model)
-		print("[CHECKING]", self.__e_model)
 	
 	def gra_buildModel(self):
 		self.__graph1 = tf.Graph()
@@ -81,8 +78,10 @@ class IdentifyFace():
 				with self.__session1.as_default():
 					gender, ethnicity, age = self.__gra_model.predict(gra_image)
 
-			gender = np.argmax(gender)
-			ethnicity = np.argmax(ethnicity)
+			print("[CHECKING] Gender: ", np.argmax(gender))
+			gender = self.__decodeGender(np.argmax(gender))
+			print("[CHECKING] Ethnicity: ", np.argmax(ethnicity))
+			ethnicity = self.__decodeEthnicity(np.argmax(ethnicity))
 			print("[CHECKING] Age: ", np.argmax(age))
 			age = self.__degroupAge(np.argmax(age))
 
@@ -98,8 +97,23 @@ class IdentifyFace():
 		print("[INFO] Done")
 		return output
 
-	def __degroupGender(self, gender):
-		if age==0
+	def __decodeGender(self, gender):
+		if gender==0:
+			return 'male'
+		else:
+			return 'female'
+
+	def __decodeEthnicity(self, ethnicity):
+		if ethnicity==0:
+			return 'white'
+		elif ethnicity==1:
+			return 'black'
+		elif ethnicity==2:
+			return 'asian'
+		elif ethnicity==3:
+			return 'indian'
+		elif ethnicity==4:
+			return 'haspanic or arabic'
 
 	def __degroupAge(self, age):
 		# Age_below20
@@ -123,20 +137,14 @@ class IdentifyFace():
 			return 'age_above_50'
 
 	def __decodeEmotion(self, emotion):
-
+		
 		if emotion==0:
 			return 'Angry'
 		elif emotion==1:
-			return 'Disgust'
-		elif emotion==2:
-			return 'Fear'
-		elif emotion==3:
 			return 'Happy'
-		elif emotion==4:
+		elif emotion==2:
 			return 'Sad'
-		elif emotion==5:
-			return 'Surprise'
-		elif emotion==6:
+		else:
 			return 'Neutral'
 
 
@@ -237,22 +245,28 @@ class IdentifyFace():
 	    x = Conv2D(32, (3, 3), padding="same", activation='relu')(inputs)
 	    x = Conv2D(32, (3, 3), padding="same", activation='relu')(x)
 	    x = MaxPooling2D(pool_size=(2, 2))(x)
+	    x = Dropout(0.5)(x)
 	                     
 	    x = Conv2D(64, (3, 3), padding="same", activation='relu')(x)
 	    x = Conv2D(64, (3, 3), padding="valid", activation='relu')(x)
 	    x = MaxPooling2D(pool_size=(2, 2))(x)
+	    x = Dropout(0.5)(x)
 	    
 	    x = Conv2D(96, (3, 3), padding="same", activation='relu')(x)
 	    x = Conv2D(96, (3, 3), padding="valid", activation='relu')(x)
 	    x = MaxPooling2D(pool_size=(2, 2))(x)
+	    x = Dropout(0.5)(x)
 	    
-	    x = Conv2D(128, (3, 3), dilation_rate=(2, 2), activation='relu', padding="same")(x)
+	    x = Conv2D(128, (3, 3), dilation_rate=(2, 2), padding="same", activation='relu')(x)
 	    x = Conv2D(128, (3, 3), padding="valid", activation='relu')(x)
 	    x = MaxPooling2D(pool_size=(2, 2))(x)
+	    x = Dropout(0.5)(x)
 	    
 	    x = Flatten()(x)
-	    x = Dense(64, activation='relu')(x)
-	    x = Dropout(0.4)(x)
-	    x = Dense(7 , activation='sigmoid')(x)
+	    x = Dense(512, activation='relu')(x)
+	    x = Dense(128, activation='relu')(x)
+	    x = Dense(4 , activation='softmax')(x)
+	    
+	    model = Model(inputs=inputs, outputs=x)
 	    
 	    return x

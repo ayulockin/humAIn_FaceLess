@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import pandas as pd
 
 ## Load dataset
 
@@ -40,6 +41,17 @@ class JSONparser():
             with open('images/'+image_names[index], 'wb') as handler:
                 handler.write(img_data)
 
-        
-
-
+    def dumpCleanJSON(self, data_dict):
+        validationJSON = {'data': {}}
+        print("[INFO] Preparing Data....")
+        for data in data_dict['data']:
+            temp_data = {}
+            image_url = data['content']
+            image_name = image_url[image_url.rfind('__')+2:]
+            annotation = data['annotation']
+            validationJSON['data'][image_name] = annotation
+        try:
+            with open("datasets/annotations.json", "w") as f:
+                json.dump(validationJSON, f)
+        except:
+            print("[ERROR] Annotation not created")

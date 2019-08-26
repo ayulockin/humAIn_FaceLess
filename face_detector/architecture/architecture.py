@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from architecture.layer_factory import LayerFactory
-from architecture.network import Network
+from face_detector.architecture.layer_factory import LayerFactory
+from face_detector.architecture.network import Network
 
 class PNet(Network):
     """

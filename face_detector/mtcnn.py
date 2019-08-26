@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import pkg_resources
 import tensorflow as tf
-from architecture.architecture import Architecture
-from utils.stagestatus import StageStatus
+from face_detector.architecture.architecture import Architecture
+from face_detector.utils.stagestatus import StageStatus
 
 class MTCNN(object):
     """
@@ -24,7 +24,8 @@ class MTCNN(object):
             steps_threshold = [0.6, 0.7, 0.7]
 
         if weights_file is None:
-            weights_file = pkg_resources.resource_stream('mtcnn', 'weights/mtcnn_weights.npy')
+            # weights_file = pkg_resources.resource_stream('mtcnn', 'face_detector/weights/mtcnn_weights.npy')
+            weights_file = 'face_detector/weights/mtcnn_weights.npy'
 
         self.__steps_threshold = steps_threshold
         
@@ -32,7 +33,7 @@ class MTCNN(object):
         self.model = Architecture()
         self.__pnet, self.__rnet, self.__onet = self.model.build(weights_file)
 
-        weights_file.close()
+        # weights_file.close()
 
     @staticmethod
     def __scale_image(image, scale: float):

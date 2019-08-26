@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from mtcnn import MTCNN
-from utils.stagestatus import StageStatus
+from face_detector.mtcnn import MTCNN
+from face_detector.utils.stagestatus import StageStatus
 
 
 class faceDetection():
@@ -72,14 +72,7 @@ class faceDetection():
             bounding_boxes.append({
                     'box': [int(bounding_box[0]), int(bounding_box[1]),
                             int(bounding_box[2]-bounding_box[0]), int(bounding_box[3]-bounding_box[1])],
-                    'confidence': bounding_box[-1],
-                    'keypoints': {
-                        'left_eye': (int(keypoints[0]), int(keypoints[5])),
-                        'right_eye': (int(keypoints[1]), int(keypoints[6])),
-                        'nose': (int(keypoints[2]), int(keypoints[7])),
-                        'mouth_left': (int(keypoints[3]), int(keypoints[8])),
-                        'mouth_right': (int(keypoints[4]), int(keypoints[9])),
-                    }
+                    'confidence': bounding_box[-1]
                 }
             )
 
@@ -109,3 +102,4 @@ class faceDetection():
             face_count+=1
 
         return faces_id
+
