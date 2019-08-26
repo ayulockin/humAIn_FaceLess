@@ -42,10 +42,16 @@ Download my trained model `weight files` from [here](https://drive.google.com/dr
 
 ## USAGE
 
-Go to the root of this repository and open command prompt or in your terminal run `main.py` script. 
+Go to the root of this repository and open command prompt or in your terminal run `main.py` script. You need to specify the path to the test image. 
 
 ```bash
-python main.py
+python main.py -i examples/example1.jpeg
+```
+
+If you want to see the bounding box detected you can run this. 
+
+```bash
+python main.py -i examples/example1.jpeg -b True
 ```
 
 This will do the following:
