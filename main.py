@@ -3,12 +3,11 @@
 
 import cv2
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import json
 import argparse
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=False,
+ap.add_argument("-i", "--image", required=True,
 	help="path to test image")
 ap.add_argument("-b", "--bbox", required=False,
 	help="draw predicted bounding box")
@@ -21,18 +20,16 @@ from face_detector.identifyface import IdentifyFace
 face_detector = faceDetection()
 identity_detector = IdentifyFace()
 
-image_path = "E:/humAIn/humAIn_faceless/humAIn_FaceLess/images/1SZ5m0pmDcS6RgpM8FPNCuw.png"
-# image_path = args['image']
+# Image path
+image_path = args['image']
 
 ## Load image
 image = cv2.imread(image_path)
 
-# image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
 # Detect Face
 result = face_detector.detect_faces(image)
 
-## Get cropped Faces
+# Get cropped Faces
 cropped_faces = face_detector.getCropedImages(image, result)
 
 ## Detect Identity
