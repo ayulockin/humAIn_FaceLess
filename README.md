@@ -66,7 +66,7 @@ You can find few other example images to test with.
 
 # Model
 
-![examples/humAIn-Faceless.png]()
+![architecture](examples/humAIn-Faceless.png)
 
 
 
