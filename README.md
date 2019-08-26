@@ -62,5 +62,17 @@ This will do the following:
 4. It will use this output and crop the faces from the input image which will be the input to three parallel detectors. 
 5. The result of the detector will be printed on the terminal.
 
+You can find few other example images to test with. 
+
+# Model
+
+![examples/humAIn-Faceless.png]()
+
+
+
+
+
+
+
 
 
