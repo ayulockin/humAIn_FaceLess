@@ -28,6 +28,7 @@ image = cv2.imread(image_path)
 
 # Detect Face
 result = face_detector.detect_faces(image)
+print(result)
 
 # Get cropped Faces
 cropped_faces = face_detector.getCropedImages(image, result)

@@ -80,6 +80,7 @@ class faceDetection():
 
 
     def drawBoundingBox(self, image, result):
+        face_count = 0
         for detection in result:
             bounding_box = detection['box']
 
@@ -87,6 +88,10 @@ class faceDetection():
                       (bounding_box[0], bounding_box[1]),
                       (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
                       (0,155,255), 2)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(image,'{}'.format(face_count),(bounding_box[0],bounding_box[1]), font, 0.5,(0,255,255),2,cv2.LINE_AA)
+
+            face_count+=1
 
         return image
 
