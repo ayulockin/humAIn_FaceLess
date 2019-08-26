@@ -19,7 +19,7 @@ class IdentifyFace():
 
 		self._gra_weight_path = weight_path[0]
 		self._e_weight_path = weight_path[1]
-		print(self._e_weight_path)
+
 		self.__gra_model = None
 		self.__e_model = None
 
@@ -56,7 +56,6 @@ class IdentifyFace():
 				inputs = Input(shape=(48,48,1))
 				emotion = self.__emotion_classification(inputs)
 				e_model = Model(inputs=inputs, outputs=emotion)
-				# print(e_model.summary())
 				e_model = load_model(self._e_weight_path)
 				self.__e_model = e_model
 
@@ -78,18 +77,18 @@ class IdentifyFace():
 				with self.__session1.as_default():
 					gender, ethnicity, age = self.__gra_model.predict(gra_image)
 
-			print("[CHECKING] Gender: ", np.argmax(gender))
+			# print("[CHECKING] Gender: ", np.argmax(gender))
 			gender = self.__decodeGender(np.argmax(gender))
-			print("[CHECKING] Ethnicity: ", np.argmax(ethnicity))
+			# print("[CHECKING] Ethnicity: ", np.argmax(ethnicity))
 			ethnicity = self.__decodeEthnicity(np.argmax(ethnicity))
-			print("[CHECKING] Age: ", np.argmax(age))
+			# print("[CHECKING] Age: ", np.argmax(age))
 			age = self.__degroupAge(np.argmax(age))
 
 			with self.__graph2.as_default():
 				with self.__session2.as_default():
 					emotion = self.__e_model.predict(e_image)
 
-			print("[CHECKING] Emotion: ", np.argmax(emotion))
+			# print("[CHECKING] Emotion: ", np.argmax(emotion))
 			emotion = self.__decodeEmotion(np.argmax(emotion))
 
 			output[face_id] = [gender, ethnicity, age, emotion]
