@@ -33,7 +33,15 @@ print(result)
 # Get cropped Faces
 cropped_faces = face_detector.getCropedImages(image, result)
 
-## Detect Identity
+print(len(cropped_faces))
+
+# for  img_id, cf in cropped_faces.items():
+# 	print(img_id)
+# 	# cv2.imshow(img_id, cf)
+# 	# cv2.waitKey()
+# 	print(cf)
+
+# ## Detect Identity
 output = identity_detector.predict(cropped_faces)
 
 print(output)

@@ -39,6 +39,7 @@ class faceDetection():
         return scales
 
 
+    # Run inference through MTCNN to get bounding boxes for detected faces. 
     def detect_faces(self, img) -> list:
         """
         Detects bounding boxes from the specified image.
@@ -79,32 +80,92 @@ class faceDetection():
         return bounding_boxes
 
 
+    # Draw predicted bounding box on the image
+    # def drawBoundingBox(self, image, result):
+    #     face_count = 0
+    #     for detection in result:
+    #         bounding_box = detection['box']
+
+    #         cv2.rectangle(image,
+    #                   (bounding_box[0], bounding_box[1]),
+    #                   (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
+    #                   (0,155,255), 2)
+    #         font = cv2.FONT_HERSHEY_SIMPLEX
+    #         cv2.putText(image,'{}'.format(face_count),(bounding_box[0],bounding_box[1]), font, 0.5,(0,255,255),2,cv2.LINE_AA)
+
+    #         face_count+=1
+
+    #     return image
+
     def drawBoundingBox(self, image, result):
         face_count = 0
         for detection in result:
             bounding_box = detection['box']
 
+        
+            x = bounding_box[0]
+            y = bounding_box[1]
+            w = bounding_box[2]
+            h = bounding_box[3]
+
+            x, y, w, h = self.getModifyBBox(x,y,w,h,100)
+
             cv2.rectangle(image,
-                      (bounding_box[0], bounding_box[1]),
-                      (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
+                      (x, y),
+                      (x+w, y+h),
                       (0,155,255), 2)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(image,'{}'.format(face_count),(bounding_box[0],bounding_box[1]), font, 0.5,(0,255,255),2,cv2.LINE_AA)
+            cv2.putText(image,'{}'.format(face_count),(x,y), font, 0.5,(0,255,255),2,cv2.LINE_AA)
 
             face_count+=1
 
         return image
 
+    # Get cropped images of the face for further predictions. 
     def getCropedImages(self, image, result):
         faces_id = {}
 
         face_count = 0
         for detection in result:
             bounding_box = detection['box']
-            cropped = image[bounding_box[1]: bounding_box[1] + bounding_box[3], bounding_box[0]:bounding_box[0]+bounding_box[2]]
+
+            x = bounding_box[0]
+            y = bounding_box[1]
+            w = bounding_box[2]
+            h = bounding_box[3]
+
+            x, y, w, h = self.getModifyBBox(x,y,w,h,400)
+            # print(x,y,w,h)
+
+            cropped = image[y:y+h, x:x+w]
+            # print(cropped)
 
             faces_id['face_{}'.format(face_count)] = cropped
             face_count+=1
 
         return faces_id
 
+    # Modify the bounding box to determine 
+    def getModifyBBox(self, x, y, w, h, ratio):
+
+        # for same aspect ratio
+        # new_h = int(h*np.sqrt(ratio/100))
+        # new_w = int(w*np.sqrt(ratio/100))
+
+        # x = int(x-(new_w-w)/2)
+        # y = int(y-(new_h-h)/2)
+
+        oldarea = h*w
+        newarea = oldarea+(oldarea*(ratio/100))
+        print(newarea)
+
+        hw = int(np.sqrt(newarea))
+        print(hw)
+        x = int(x-(hw-w)/2)
+        y = int(y-(hw-h)/2)
+
+
+        print(hw, hw, x, y)
+
+
+        return x,y,hw,hw

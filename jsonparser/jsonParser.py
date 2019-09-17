@@ -10,7 +10,7 @@ class JSONparser():
         self._dataPath = dataPath
 
     def loadJSONfile(self):
-        print("[INFO] Loading JSON file.......")
+        print("[INFO] Loading JSON file")
         with open(self._dataPath, encoding='utf8') as json_file:
             data_dict = json.loads(json_file.read())
         print("[INFO] Loaded")
@@ -41,7 +41,7 @@ class JSONparser():
             with open('images/'+image_names[index], 'wb') as handler:
                 handler.write(img_data)
 
-    def dumpCleanJSON(self, data_dict):
+    def getAnnotation(self, data_dict):
         validationJSON = {'data': {}}
         print("[INFO] Preparing Data....")
         for data in data_dict['data']:

@@ -13,44 +13,66 @@ from keras.models import Model
 from keras.layers import Input
 from keras.layers import Dense, Flatten, BatchNormalization, Dropout
 from keras.layers import Conv2D, MaxPooling2D
+from keras.models import model_from_yaml
 
 from keras.models import load_model
 
-
 class IdentifyFace():
-	def __init__(self, weight_path=['face_detector/weights/gender-race-age.hdf5', 'face_detector/weights/emotion.hdf5']):
+	def __init__(self, weight_path=['face_detector/weights/gender-ethnicity.hdf5', 
+									'face_detector/weights/emotion.hdf5',
+									'face_detector/weights/age.hdf5']):
 
-		self._gra_weight_path = weight_path[0]
+		self._ge_weight_path = weight_path[0]
 		self._e_weight_path = weight_path[1]
+		self._a_weight_path = weight_path[2]
 
-		self.__gra_model = None
+		self.__ge_model = None
 		self.__e_model = None
+		self.__a_model = None
 
 		self.__graph1 = None
 		self.__graph2 = None
+		self.__graph3 = None
 		self.__session1 = None
 		self.__session2 = None
+		self.__session3 = None
 
 		print("[INFO] Preparing Model and loading weights...")
-		self.gra_buildModel()
+		self.ge_buildModel()
 		self.e_buildModel()
+		self.a_buildModel()
 		print("[INFO] Done")
-	
-	def gra_buildModel(self):
+
+
+	# Model for Gender and Ethnicity
+	def ge_buildModel(self):
 		self.__graph1 = tf.Graph()
 		with self.__graph1.as_default():
 			self.__session1 = tf.Session()
 			with self.__session1.as_default():
-				inputLayer = Input(shape=(200,200,3))
-				gender = self.__gender_classificaton(inputLayer)
-				ethnicity = self.__ethnicity_classification(inputLayer)
-				age = self.__age_classification(inputLayer)
+				yaml_file = open('face_detector/weights/model-gender-ethnicity.yaml', 'r')
+				loaded_model_yaml = yaml_file.read()
+				yaml_file.close()
+				loaded_model = model_from_yaml(loaded_model_yaml)
+				# load weights into new model
+				loaded_model.load_weights(self._ge_weight_path)
+				self.__ge_model = loaded_model
 
-				gra_model = Model(inputs=inputLayer, outputs=[gender, ethnicity, age])
-				gra_model = load_model(self._gra_weight_path)
-				self.__gra_model = gra_model
+	# Model for age
+	def a_buildModel(self):
+		self.__graph3 = tf.Graph()
+		with self.__graph3.as_default():
+			self.__session3 = tf.Session()
+			with self.__session3.as_default():
+				age_file = open('face_detector/weights/model-age.yaml', 'r')
+				age_model_yaml = age_file.read()
+				age_file.close()
+				age_model = model_from_yaml(age_model_yaml)
+				# load weights into new model
+				age_model.load_weights(self._a_weight_path)
+				self.__a_model = age_model
 
-
+	# Model for emotion
 	def e_buildModel(self):
 		self.__graph2 = tf.Graph()
 		with self.__graph2.as_default():
@@ -63,6 +85,7 @@ class IdentifyFace():
 				self.__e_model = e_model
 
 
+	# Prediction from all three classifiers. 
 	def predict(self, image_dict):
 		print("[INFO] Predicting Gender, Ethnicity, Age and Emotion...")
 		output = {}
@@ -78,33 +101,62 @@ class IdentifyFace():
 
 			with self.__graph1.as_default():
 				with self.__session1.as_default():
-					gender, ethnicity, age = self.__gra_model.predict(gra_image)
-
-			# print("[CHECKING] Gender: ", np.argmax(gender))
-			gender = self.__decodeGender(np.argmax(gender))
-			# print("[CHECKING] Ethnicity: ", np.argmax(ethnicity))
-			ethnicity = self.__decodeEthnicity(np.argmax(ethnicity))
-			# print("[CHECKING] Age: ", np.argmax(age))
-			age = self.__degroupAge(np.argmax(age))
+					gender_ethnicity = self.__ge_model.predict(gra_image)
+					# print("[CHECKING] Gender :", gender_ethnicity)
+					# print("[CHECKING] Gender:", np.argmax(gender_ethnicity))
+					
+					gender, ethnicity = self.__decodeGenderEthnicity(np.argmax(gender_ethnicity))
+					
 
 			with self.__graph2.as_default():
 				with self.__session2.as_default():
 					emotion = self.__e_model.predict(e_image)
 
-			# print("[CHECKING] Emotion: ", np.argmax(emotion))
-			emotion = self.__decodeEmotion(np.argmax(emotion))
+					emotion = self.__decodeEmotion(np.argmax(emotion))
+
+			with self.__graph3.as_default():
+				with self.__session3.as_default():
+					age_prediction = self.__a_model.predict(gra_image)
+					# print("[CHECKING] Age:", age_prediction)
+					# print("[CHECKING] Age:", np.argmax(age_prediction))
+					age = self.__degroupAge(np.argmax(age_prediction))
 
 			output[face_id] = [gender, ethnicity, age, emotion]
 
 		print("[INFO] Done")
 		return output
 
+	# Decode prediction for Gender and Ethnicity
+	def __decodeGenderEthnicity(self, gender_ethnicity):
+		if gender_ethnicity==0:
+		    return self.__decodeGender(0), self.__decodeEthnicity(0)
+		elif gender_ethnicity==1:
+			return self.__decodeGender(0), self.__decodeEthnicity(1)
+		elif gender_ethnicity==2:
+			return self.__decodeGender(0), self.__decodeEthnicity(2)
+		elif gender_ethnicity==3:
+			return self.__decodeGender(0), self.__decodeEthnicity(3)
+		elif gender_ethnicity==4:
+			return self.__decodeGender(0), self.__decodeEthnicity(4)
+		elif gender_ethnicity==5:
+			return self.__decodeGender(1), self.__decodeEthnicity(0)
+		elif gender_ethnicity==6:
+			return self.__decodeGender(1), self.__decodeEthnicity(1)
+		elif gender_ethnicity==7:
+			return self.__decodeGender(1), self.__decodeEthnicity(2)
+		elif gender_ethnicity==8:
+			return self.__decodeGender(1), self.__decodeEthnicity(3)
+		else:
+			return self.__decodeGender(1), self.__decodeEthnicity(4)
+
+	# Label Gender's prediction
 	def __decodeGender(self, gender):
 		if gender==0:
 			return 'male'
 		else:
 			return 'female'
 
+	# Label Ethnicity's prediction
 	def __decodeEthnicity(self, ethnicity):
 		if ethnicity==0:
 			return 'white'
@@ -117,6 +169,7 @@ class IdentifyFace():
 		elif ethnicity==4:
 			return 'haspanic or arabic'
 
+	# Label Age's prediction
 	def __degroupAge(self, age):
 		# Age_below20
 		if age==0 or age==1:
@@ -138,6 +191,7 @@ class IdentifyFace():
 		else:
 			return 'age_above_50'
 
+	# Label Emotion's prediction
 	def __decodeEmotion(self, emotion):
 		
 		if emotion==0:
@@ -149,100 +203,11 @@ class IdentifyFace():
 		else:
 			return 'Neutral'
 
+	# Build model for emotion classification. 
 
-	def __gender_classificaton(self, inputLayer):
-	    x = Conv2D(32, kernel_size=(3,3), padding='same', activation='relu')(inputLayer)
-	    x = Conv2D(64, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(128, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(128, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(256, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(256, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Flatten()(x)
-	    x = Dense(256, activation='relu')(x)
-	    x = Dense(128, activation='relu')(x)
-	    x = Dense(64, activation='relu')(x)
-	    x = Dense(1, activation='sigmoid', name='gender')(x)
-	    
-	    return x
-
-	def __ethnicity_classification(self, inputLayer):
-	    x = Conv2D(64, kernel_size=(3,3), padding='same', activation='relu')(inputLayer)
-	    x = Conv2D(64, kernel_size=(3,3), padding='same', activation='relu')(inputLayer)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(64, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(64, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(128, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(128, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(256, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(256, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Flatten()(x)
-	    x = Dense(512, activation='relu')(x)
-	    x = Dense(256, activation='relu')(x)
-	    x = Dense(5, activation='softmax', name='ethnicity')(x)
-	    
-	    return x
-
-
-	def __age_classification(self, inputLayer):
-	    x = Conv2D(32, kernel_size=(3,3), padding='same', activation='relu')(inputLayer)
-	    x = Conv2D(32, kernel_size=(3,3), padding='same', activation='relu')(inputLayer)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(64, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(64, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(128, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(128, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Conv2D(256, kernel_size=(3,3), padding='valid', activation='relu')(x)
-	    x = Conv2D(256, kernel_size=(3,3), padding='same', activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2,2))(x)
-	    x = BatchNormalization()(x)
-	    x = Dropout(0.25)(x)
-	    
-	    x = Flatten()(x)
-	    x = Dense(1024, activation='relu')(x)
-	    x = Dense(512, activation='relu')(x)
-	    x = Dense(256, activation='relu')(x)
-	    x = Dense(12, activation='softmax', name='age')(x)
-	    
-	    return x
-
+	###
+	#ToDo: Remove this and use .yaml file format for model.
+	###
 	def __emotion_classification(self, inputs):
 	    x = Conv2D(32, (3, 3), padding="same", activation='relu')(inputs)
 	    x = Conv2D(32, (3, 3), padding="same", activation='relu')(x)
