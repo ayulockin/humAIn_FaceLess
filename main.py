@@ -1,6 +1,7 @@
 import cv2
 import os
 import json
+import base64
 
 from skimage.io import imread
 
@@ -9,7 +10,7 @@ from face_detector.identifyface import IdentifyFace
 
 # Prepare Detectors 
 face_detector = faceDetection()
-identity_detector = IdentifyFace()
+identity_detector = IdentifyFace('weights')
 
 
 def working(imagefile):
@@ -32,4 +33,7 @@ def working(imagefile):
 
 	output = identity_detector.predict(cropped_faces)
 
-	return str(output)
+	image = face_detector.drawBoundingBox(image, result)
+	base64_image = base64.b64encode(image)
+
+	return str(output), str(base64_image)
