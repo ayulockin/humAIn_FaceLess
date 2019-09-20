@@ -18,17 +18,18 @@ from keras.models import model_from_yaml
 from keras.models import load_model
 
 class IdentifyFace():
-	def __init__(self, weight_path=['face_detector/weights/gender-ethnicity.hdf5', 
-									'face_detector/weights/emotion.hdf5',
-									'face_detector/weights/age.hdf5']):
+	def __init__(self, weight_path):
 
-		self._ge_weight_path = weight_path[0]
-		self._e_weight_path = weight_path[1]
-		self._a_weight_path = weight_path[2]
+		self.weight_path = weight_path
 
-		self.__ge_model = None
-		self.__e_model = None
-		self.__a_model = None
+		self._gen_eth_weight_path = os.path.join(weight_path+'/gender_ethnicity.h5')
+		self._emotion_weight_path = os.path.join(weight_path+'/emotion.h5')
+		self._age_weight_path = os.path.join(weight_path+'/age.h5')
+
+
+		self.__gen_eth_model = None
+		self.__emotion_model = None
+		self.__age_model = None
 
 		self.__graph1 = None
 		self.__graph2 = None
@@ -38,51 +39,54 @@ class IdentifyFace():
 		self.__session3 = None
 
 		print("[INFO] Preparing Model and loading weights...")
-		self.ge_buildModel()
-		self.e_buildModel()
-		self.a_buildModel()
+		self.gen_eth_buildModel()
+		self.emotion_buildModel()
+		self.age_buildModel()
 		print("[INFO] Done")
 
 
 	# Model for Gender and Ethnicity
-	def ge_buildModel(self):
+	def gen_eth_buildModel(self):
 		self.__graph1 = tf.Graph()
 		with self.__graph1.as_default():
 			self.__session1 = tf.Session()
 			with self.__session1.as_default():
-				yaml_file = open('face_detector/weights/model-gender-ethnicity.yaml', 'r')
-				loaded_model_yaml = yaml_file.read()
-				yaml_file.close()
+				gen_ethn_file = open(os.path.join(self.weight_path+'/model_gender_ethnicity.yaml'), 'r')
+				loaded_model_yaml = gen_ethn_file.read()
+				gen_ethn_file.close()
 				loaded_model = model_from_yaml(loaded_model_yaml)
 				# load weights into new model
-				loaded_model.load_weights(self._ge_weight_path)
-				self.__ge_model = loaded_model
+				loaded_model.load_weights(self._gen_eth_weight_path)
+				self.__gen_eth_model = loaded_model
 
-	# Model for age
-	def a_buildModel(self):
-		self.__graph3 = tf.Graph()
-		with self.__graph3.as_default():
-			self.__session3 = tf.Session()
-			with self.__session3.as_default():
-				age_file = open('face_detector/weights/model-age.yaml', 'r')
-				age_model_yaml = age_file.read()
-				age_file.close()
-				age_model = model_from_yaml(age_model_yaml)
-				# load weights into new model
-				age_model.load_weights(self._a_weight_path)
-				self.__a_model = age_model
 
 	# Model for emotion
-	def e_buildModel(self):
+	def emotion_buildModel(self):
 		self.__graph2 = tf.Graph()
 		with self.__graph2.as_default():
 			self.__session2 = tf.Session()
 			with self.__session2.as_default():	
-				inputs = Input(shape=(48,48,1))
-				emotion = self.__emotion_classification(inputs)
-				e_model = Model(inputs=inputs, outputs=emotion)
-				e_model = load_model(self._e_weight_path)
-				self.__e_model = e_model
+				emotion_file = open(os.path.join(self.weight_path+'/model_emotion.yaml'), 'r')
+				emotion_model_yaml = emotion_file.read()
+				emotion_file.close()
+				emotion_model = model_from_yaml(emotion_model_yaml)
+				# load weights into new model
+				emotion_model.load_weights(self._emotion_weight_path)
+				self.__emotion_model = emotion_model
+
+	# Model for age
+	def age_buildModel(self):
+		self.__graph3 = tf.Graph()
+		with self.__graph3.as_default():
+			self.__session3 = tf.Session()
+			with self.__session3.as_default():
+				age_file = open(os.path.join(self.weight_path+'/model_age.yaml'), 'r')
+				age_model_yaml = age_file.read()
+				age_file.close()
+				age_model = model_from_yaml(age_model_yaml)
+				# load weights into new model
+				age_model.load_weights(self._age_weight_path)
+				self.__age_model = age_model
 
 
 	# Prediction from all three classifiers. 
@@ -91,32 +95,31 @@ class IdentifyFace():
 		output = {}
 		for face_id, image in image_dict.items():
 
-			gra_image = cv2.resize(image, (200,200))
+			gen_eth_img = cv2.resize(image, self.__gen_eth_model.layers[0].output_shape[1:3][::-1])
+			emotion_img = cv2.resize(image, self.__emotion_model.layers[0].output_shape[1:3][::-1])
+			age_img = cv2.resize(image, self.__age_model.layers[0].output_shape[1:3][::-1])
 
-			e_image = cv2.resize(image, (48,48))
-			e_image = cv2.cv2.cvtColor(e_image, cv2.COLOR_RGB2GRAY)
-			
-			gra_image = gra_image.reshape(((1,)+gra_image.shape))
-			e_image = e_image.reshape((1,48,48,1))
+			gen_eth_img = gen_eth_img.reshape((1,)+gen_eth_img.shape)
+			age_img = age_img.reshape((1,)+age_img.shape)
+			emotion_img = emotion_img.reshape((1,)+emotion_img.shape)
+
 
 			with self.__graph1.as_default():
 				with self.__session1.as_default():
-					gender_ethnicity = self.__ge_model.predict(gra_image)
+					gender_ethnicity = self.__gen_eth_model.predict(gen_eth_img)
 					# print("[CHECKING] Gender :", gender_ethnicity)
 					# print("[CHECKING] Gender:", np.argmax(gender_ethnicity))
-					
 					gender, ethnicity = self.__decodeGenderEthnicity(np.argmax(gender_ethnicity))
 					
 
 			with self.__graph2.as_default():
 				with self.__session2.as_default():
-					emotion = self.__e_model.predict(e_image)
-
+					emotion = self.__emotion_model.predict(emotion_img)
 					emotion = self.__decodeEmotion(np.argmax(emotion))
 
 			with self.__graph3.as_default():
 				with self.__session3.as_default():
-					age_prediction = self.__a_model.predict(gra_image)
+					age_prediction = self.__age_model.predict(age_img)
 					# print("[CHECKING] Age:", age_prediction)
 					# print("[CHECKING] Age:", np.argmax(age_prediction))
 					age = self.__degroupAge(np.argmax(age_prediction))
@@ -126,114 +129,52 @@ class IdentifyFace():
 		print("[INFO] Done")
 		return output
 
-	# Decode prediction for Gender and Ethnicity
-	def __decodeGenderEthnicity(self, gender_ethnicity):
-		if gender_ethnicity==0:
-		    return self.__decodeGender(0), self.__decodeEthnicity(0)
-		elif gender_ethnicity==1:
-			return self.__decodeGender(0), self.__decodeEthnicity(1)
-		elif gender_ethnicity==2:
-			return self.__decodeGender(0), self.__decodeEthnicity(2)
-		elif gender_ethnicity==3:
-			return self.__decodeGender(0), self.__decodeEthnicity(3)
-		elif gender_ethnicity==4:
-			return self.__decodeGender(0), self.__decodeEthnicity(4)
-		elif gender_ethnicity==5:
-			return self.__decodeGender(1), self.__decodeEthnicity(0)
-		elif gender_ethnicity==6:
-			return self.__decodeGender(1), self.__decodeEthnicity(1)
-		elif gender_ethnicity==7:
-			return self.__decodeGender(1), self.__decodeEthnicity(2)
-		elif gender_ethnicity==8:
-			return self.__decodeGender(1), self.__decodeEthnicity(3)
-		else:
-			return self.__decodeGender(1), self.__decodeEthnicity(4)
-
-	# Label Gender's prediction
-	def __decodeGender(self, gender):
-		if gender==0:
-			return 'male'
-		else:
-			return 'female'
-
-	# Label Ethnicity's prediction
-	def __decodeEthnicity(self, ethnicity):
-		if ethnicity==0:
-			return 'white'
-		elif ethnicity==1:
-			return 'black'
-		elif ethnicity==2:
-			return 'asian'
-		elif ethnicity==3:
-			return 'indian'
-		elif ethnicity==4:
-			return 'haspanic or arabic'
+	def __decodeGenderEthnicity(self, ged_eth):
+		if ged_eth==0:
+			return 'G_Male', 'E_White'
+		elif ged_eth==1:
+			return 'G_Male', 'E_Hispanic'
+		elif ged_eth==2:
+			return 'G_Male', 'E_Asian'
+		elif ged_eth==3:
+			return 'G_Male', 'E_Black'
+		elif ged_eth==4:
+			return 'G_Male', 'E_Arab'
+		elif ged_eth==5:
+			return 'G_Male', 'E_Indian'
+		elif ged_eth==6:
+			return 'G_Female', 'E_White'
+		elif ged_eth==7:
+			return 'G_Female', 'E_Hispanic'
+		elif ged_eth==8:
+			return 'G_Female', 'E_Asian'
+		elif ged_eth==9:
+			return 'G_Female', 'E_Black'
+		elif ged_eth==10:
+			return 'G_Female', 'E_Arab'
+		elif ged_eth==11:
+			return 'G_Female', 'E_Indian'
 
 	# Label Age's prediction
 	def __degroupAge(self, age):
-		# Age_below20
-		if age==0 or age==1:
-			return 'age_below20'
-
-		# Age_20_30
-		elif age==3 or age==3 or age==4:
-			return 'age_20_30'
-
-		# Age_30_40
-		elif age==5 or age==6 or age==7 or age==8:
-			return 'age_30_40'
-
-		# Age_40_50
-		elif age==8 or age==9:
-			return 'age_40_50'
-
-		# Age_above_50
-		else:
-			return 'age_above_50'
+	    if age==0:
+	        return 'Age_below20'
+	    if age==1:
+	        return 'Age_20_30'
+	    if age==2:
+	        return 'Age_30_40'
+	    if age==3:
+	        return 'Age_40_50'
+	    if age==4:
+	        return 'Age_above_50'
 
 	# Label Emotion's prediction
 	def __decodeEmotion(self, emotion):
-		
-		if emotion==0:
-			return 'Angry'
-		elif emotion==1:
-			return 'Happy'
-		elif emotion==2:
-			return 'Sad'
-		else:
-			return 'Neutral'
-
-	# Build model for emotion classification. 
-
-	###
-	#ToDo: Remove this and use .yaml file format for model.
-	###
-	def __emotion_classification(self, inputs):
-	    x = Conv2D(32, (3, 3), padding="same", activation='relu')(inputs)
-	    x = Conv2D(32, (3, 3), padding="same", activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2, 2))(x)
-	    x = Dropout(0.5)(x)
-	                     
-	    x = Conv2D(64, (3, 3), padding="same", activation='relu')(x)
-	    x = Conv2D(64, (3, 3), padding="valid", activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2, 2))(x)
-	    x = Dropout(0.5)(x)
-	    
-	    x = Conv2D(96, (3, 3), padding="same", activation='relu')(x)
-	    x = Conv2D(96, (3, 3), padding="valid", activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2, 2))(x)
-	    x = Dropout(0.5)(x)
-	    
-	    x = Conv2D(128, (3, 3), dilation_rate=(2, 2), padding="same", activation='relu')(x)
-	    x = Conv2D(128, (3, 3), padding="valid", activation='relu')(x)
-	    x = MaxPooling2D(pool_size=(2, 2))(x)
-	    x = Dropout(0.5)(x)
-	    
-	    x = Flatten()(x)
-	    x = Dense(512, activation='relu')(x)
-	    x = Dense(128, activation='relu')(x)
-	    x = Dense(4 , activation='softmax')(x)
-	    
-	    model = Model(inputs=inputs, outputs=x)
-	    
-	    return x
+	    if emotion==0:
+	        return 'Emotion_Happy'
+	    if emotion==1:
+	        return 'Emotion_Neutral'
+	    if emotion==2:
+	        return 'Emotion_Sad'
+	    if emotion==3:
+	        return 'Emotion_Angry'

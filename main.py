@@ -1,7 +1,6 @@
 import cv2
 import os
 import json
-import argparse
 
 from skimage.io import imread
 
@@ -28,9 +27,9 @@ def working(imagefile):
 
 	for img_id, img in cropped_faces.items():
 		print(img.shape)
-
-	# image = face_detector.drawBoundingBox(image, result)
 	# ## Detect Identity
+	# image = face_detector.drawBoundingBox(image, result)
+
 	output = identity_detector.predict(cropped_faces)
 
-	return (output)
+	return str(output)

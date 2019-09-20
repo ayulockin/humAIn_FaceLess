@@ -20,23 +20,12 @@ def predict():
         return "Filename is not present in the request"
     if not input_file.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
         return "Invalid file type"
-    
     else:
-        # input_buffer = BytesIO()
-        # input_file.save(input_buffer)
-        return jsonify(working(input_file))
-        # image_array = imread(input_buffer, as_gray=True)
-        
-        # category = evaluate_image(image_array)
-        # return jsonify({'Category': str(category)})
+        return jsonify(working(input_file)) 
 
 if __name__ == '__main__':
     try:
-        port = int(sys.argv[1]) # This is for a command-line input
+        port = int(sys.argv[1])
     except:
-        port = 8000 # If you don't provide any port the port will be set to 12345
-
-    # model_columns = joblib.load("model_columns.pkl") # Load "model_columns.pkl"
-    # print ('Model columns loaded')
-
+        port = 8000
     app.run(port=port, debug=True)

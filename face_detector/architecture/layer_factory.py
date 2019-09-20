@@ -1,7 +1,6 @@
 import tensorflow as tf
 from distutils.version import LooseVersion
 
-
 class LayerFactory(object):
     """
     Allows to create stack layers for a given network.
