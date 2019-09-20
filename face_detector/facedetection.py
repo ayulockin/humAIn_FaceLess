@@ -134,7 +134,7 @@ class faceDetection():
             w = bounding_box[2]
             h = bounding_box[3]
 
-            x, y, w, h = self.getModifyBBox(x,y,w,h,400)
+            # x, y, w, h = self.getModifyBBox(x,y,w,h,400)
             # print(x,y,w,h)
 
             cropped = image[y:y+h, x:x+w]

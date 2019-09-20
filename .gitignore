@@ -3,6 +3,8 @@
 *.pyc
 
 face_detector/weights
+face_detector/weightsnew
 images
 face_images
 cascades
+examples/weights
