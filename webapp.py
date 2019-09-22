@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-    return 'Welcome to TCS HumAIn Demo'
+    return 'TCS humAIn'
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -25,7 +25,7 @@ def predict():
         return "Invalid file type"
     else:
         prediction, img = working(input_file)
-        output = {"image": img, "prediction": prediction}
+        output = {"prediction": prediction, "image": img}
         return jsonify(output)
 
 if __name__ == '__main__':

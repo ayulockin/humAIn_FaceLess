@@ -2,7 +2,6 @@
 .ipynb_checkpoints/
 *.pyc
 
-face_detector/weights
 face_detector/weightsnew
 images
 face_images
