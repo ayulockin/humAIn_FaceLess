@@ -97,7 +97,7 @@ class faceDetection():
                       (x+w, y+h),
                       (0,155,255), 2)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(image,'{}'.format(face_count),(x,y), font, 0.5,(0,255,255),2,cv2.LINE_AA)
+            cv2.putText(image,'{}'.format(face_count),(x,y), font, 0.5,(0,20,200),2,cv2.LINE_AA)
 
             face_count+=1
 

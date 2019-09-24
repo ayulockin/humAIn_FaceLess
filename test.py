@@ -51,4 +51,5 @@ print(output)
 if args['bbox']:
 	image = face_detector.drawBoundingBox(image, result)
 	cv2.imshow("frame", image)
+	cv2.imwrite("Image1.jpeg", image)
 	cv2.waitKey()
